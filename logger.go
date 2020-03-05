@@ -1,8 +1,14 @@
 package logger
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
+	"path"
+	"runtime"
+	"strconv"
+	"time"
 )
 
 type Level int8
@@ -15,23 +21,13 @@ const (
 )
 
 var DisableColor = false
-
-type Options struct {
-	Level        Level
-	RecordCaller bool
-	ShortName    bool
-}
-
-func DefaultOptions() *Options {
-	return &Options{
-		Level:        DebugLevel,
-		RecordCaller: true,
-		ShortName:    true,
-	}
-}
+const DefaultDateFormat = "2006/01/02 15:04"
 
 type AbstractLogger interface {
 	SetLogLevel(level Level)
+	SetOutput(writer io.Writer)
+	SetReportCaller(b bool, skipCallerNumber ...int)
+	SetDateFormat(format string)
 
 	Debug(args ...interface{})
 	Debugf(format string, args ...interface{})
@@ -47,61 +43,113 @@ type AbstractLogger interface {
 }
 
 type Logger struct {
-	*writer
-	config *Options
+	io.Writer
+	Level            Level
+	DateFormat       string
+	RecordCaller     bool
+	SkipCallerNumber int
 }
 
-func New(options *Options) *Logger {
-	if options == nil {
-		options = DefaultOptions()
+func New() *Logger {
+	return &Logger{
+		Writer:           os.Stdout,
+		Level:            InfoLevel,
+		DateFormat:       DefaultDateFormat,
+		SkipCallerNumber: 3,
 	}
-	l := &Logger{
-		writer: newWriter(os.Stdout, options.RecordCaller),
-		config: options,
+}
+
+func (l *Logger) SetOutput(writer io.Writer) {
+	l.Writer = writer
+}
+
+func (l *Logger) SetLogLevel(level Level) {
+	l.Level = level
+}
+
+func (l *Logger) SetDateFormat(format string) {
+	l.DateFormat = format
+}
+
+func (l *Logger) SetReportCaller(b bool, skipCallerNumber ...int) {
+	l.RecordCaller = b
+	if len(skipCallerNumber) == 0 {
+		l.SkipCallerNumber = 3
+	} else if skipCallerNumber[0] > 0 {
+		l.SkipCallerNumber = skipCallerNumber[0]
 	}
-	return l
 }
 
 func (l *Logger) Debug(args ...interface{}) {
-	if l.config.Level <= DebugLevel {
-		l.writer.WriteString(DebugLevel, fmt.Sprint(args))
+	if l.Level <= DebugLevel {
+		l.WriteString(DebugLevel, fmt.Sprint(args...))
 	}
 }
 
 func (l *Logger) Debugf(format string, args ...interface{}) {
-	if l.config.Level <= DebugLevel {
-		l.writer.WriteString(DebugLevel, fmt.Sprintf(format, args))
+	if l.Level <= DebugLevel {
+		l.WriteString(DebugLevel, fmt.Sprintf(format, args...))
 	}
 }
 
 func (l *Logger) Print(args ...interface{}) {
-	if l.config.Level <= InfoLevel {
-		l.writer.WriteString(InfoLevel, fmt.Sprint(args))
+	if l.Level <= InfoLevel {
+		l.WriteString(InfoLevel, fmt.Sprint(args...))
 	}
 }
 
 func (l *Logger) Printf(format string, args ...interface{}) {
-	if l.config.Level <= InfoLevel {
-		l.writer.WriteString(InfoLevel, fmt.Sprintf(format, args))
+	if l.Level <= InfoLevel {
+		l.WriteString(InfoLevel, fmt.Sprintf(format, args...))
 	}
 }
 
 func (l *Logger) Warning(args ...interface{}) {
-	if l.config.Level <= WarnLevel {
-		l.writer.WriteString(WarnLevel, fmt.Sprint(args))
+	if l.Level <= WarnLevel {
+		l.WriteString(WarnLevel, fmt.Sprint(args...))
 	}
 }
 
 func (l *Logger) Warningf(format string, args ...interface{}) {
-	if l.config.Level <= WarnLevel {
-		l.writer.WriteString(WarnLevel, fmt.Sprintf(format, args))
+	if l.Level <= WarnLevel {
+		l.WriteString(WarnLevel, fmt.Sprintf(format, args...))
 	}
 }
 
 func (l *Logger) Error(args ...interface{}) {
-	l.writer.WriteString(ErrorLevel, fmt.Sprint(args))
+	l.WriteString(ErrorLevel, fmt.Sprint(args...))
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
-	l.writer.WriteString(ErrorLevel, fmt.Sprintf(format, args))
+	l.WriteString(ErrorLevel, fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) WriteString(level Level, message string) {
+	t := defaultFormatters[level].ColorType
+	if DisableColor {
+		t = defaultFormatters[level].Type
+	}
+	var bytesBuf = bytes.NewBuffer(nil)
+	if len(l.DateFormat) > 0 {
+		bytesBuf.WriteString("[")
+		bytesBuf.WriteString(time.Now().Format(l.DateFormat))
+		bytesBuf.WriteString("] ")
+	}
+	bytesBuf.WriteString(l.getCaller())
+	bytesBuf.WriteString(t)
+	bytesBuf.WriteString(" ")
+	bytesBuf.WriteString(message)
+	bytesBuf.WriteString("\n")
+
+	l.Writer.Write(bytesBuf.Bytes())
+}
+
+func (l *Logger) getCaller() string {
+	if l.RecordCaller {
+		_, callerFile, line, ok := runtime.Caller(l.SkipCallerNumber)
+		if ok {
+			return path.Base(callerFile) + ":" + strconv.Itoa(line) + ": "
+		}
+	}
+	return ""
 }

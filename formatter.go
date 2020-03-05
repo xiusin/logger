@@ -2,41 +2,36 @@ package logger
 
 import "github.com/fatih/color"
 
-type LevelFormatter struct {
-	ColorType       string
-	Type            string
-	DateFormat      string
-	LoggerFormatter string
+type levelFormatter struct {
+	ColorType    string
+	Type         string
+	//LoggerFormat string
 }
 
+//const DefaultLoggerFormat = "%date% %type% %file% %message%"
 
-var defaultFormatters = map[Level]*LevelFormatter{
+var defaultFormatters = map[Level]*levelFormatter{
 	DebugLevel: {
-		Type:            "[DEBUG]",
-		ColorType:       color.HiBlueString("[DEBUG]"),
-		DateFormat:      "2006-01-02 15:04:05",
-		LoggerFormatter: "%date% %type% %file% %message%",
+		Type:      "[DBUG]",
+		ColorType: color.HiBlueString("%s", "[DBUG]"),
+		//LoggerFormat: DefaultLoggerFormat,
 	},
 	InfoLevel: {
-		Type:            "[INFO]",
-		ColorType:       color.GreenString("[INFO]"),
-		DateFormat:      "2006-01-02 15:04:05",
-		LoggerFormatter: "%date% %type %file% %message%",
+		Type:      "[INFO]",
+		ColorType: color.GreenString("[INFO]"),
+		//LoggerFormat: DefaultLoggerFormat,
 	},
 	WarnLevel: {
-		Type:            "[WARNING]",
-		ColorType:       color.HiBlueString("[WARNING]"),
-		DateFormat:      "2006-01-02 15:04:05",
-		LoggerFormatter: "%date% %type %file% %message%",
+		Type:      "[WARN]",
+		ColorType: color.HiYellowString("[WARN]"),
+		//LoggerFormat: DefaultLoggerFormat,
 	},
 	ErrorLevel: {
-		Type:            "[ERROR]",
-		ColorType:       color.HiBlueString("[ERROR]"),
-		DateFormat:      "2006-01-02 15:04:05",
-		LoggerFormatter: "%date% %type% %file% %message%",
+		Type:      "[ERRO]",
+		ColorType: color.HiRedString("[ERRO]"),
 	},
 }
 
-func SetLevelFormatter(level Level, formatter *LevelFormatter) {
-	defaultFormatters[level] = formatter
-}
+//func SetLevelFormatter(level Level, formatter *LevelFormatter) {
+//	defaultFormatters[level] = formatter
+//}
