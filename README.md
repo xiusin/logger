@@ -23,7 +23,7 @@ func main (){
 
     // 使用默认日志对象打印
     logger.Error("This is an error message")
-	logger.Warning("This is a warning message")
+    logger.Warning("This is a warning message")
 	logger.Print("This is an info message")
 	logger.Debug("This is a debug message")
     
