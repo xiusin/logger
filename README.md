@@ -41,3 +41,8 @@ func main (){
 # 输出样式如下 #
 ![](img.png)
 
+# 取消色彩 #
+```go
+logger.DisableColor = true
+```
+使用 `DisableColor`禁用色彩, 建议测试期间开启, 生产关闭, 不然输出格式会错乱
