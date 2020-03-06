@@ -24,8 +24,8 @@ func SetDateFormat(format string) {
 	defaultLogger.SetDateFormat(format)
 }
 
-func SetReportCaller(b bool, skipCallerNumber ...int) {
-	defaultLogger.SetReportCaller(b, skipCallerNumber...)
+func SetReportCaller(b bool) {
+	defaultLogger.SetReportCaller(b, 4)
 }
 
 func Debug(args ...interface{}) {
