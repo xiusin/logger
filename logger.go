@@ -54,7 +54,7 @@ type Logger struct {
 func New() *Logger {
 	return &Logger{
 		Writer:           os.Stdout,
-		Level:            InfoLevel,
+		Level:            DebugLevel,
 		DateFormat:       DefaultDateFormat,
 		SkipCallerNumber: 3,
 	}
