@@ -8,6 +8,7 @@ import (
 	"path"
 	"runtime"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -20,9 +21,20 @@ const (
 	ErrorLevel
 )
 
-var DisableColor = false
-
 const DefaultDateFormat = "2006/01/02 15:04"
+
+const DefaultSkipCallerNumber = 3
+
+var (
+	risk  = []byte(":")
+	left  = []byte("[")
+	right = []byte("]")
+	space = []byte(" ")
+	brk = []byte("\n")
+	DisableColor = false
+
+	bufPool sync.Pool
+)
 
 type AbstractLogger interface {
 	SetLogLevel(level Level)
@@ -51,12 +63,18 @@ type Logger struct {
 	SkipCallerNumber int
 }
 
+func init() {
+	bufPool = sync.Pool{New: func() interface{} {
+		return bytes.NewBuffer(nil)
+	}}
+}
+
 func New() *Logger {
 	return &Logger{
 		Writer:           os.Stdout,
 		Level:            DebugLevel,
 		DateFormat:       DefaultDateFormat,
-		SkipCallerNumber: 3,
+		SkipCallerNumber: DefaultSkipCallerNumber,
 	}
 }
 
@@ -75,7 +93,7 @@ func (l *Logger) SetDateFormat(format string) {
 func (l *Logger) SetReportCaller(b bool, skipCallerNumber ...int) {
 	l.RecordCaller = b
 	if len(skipCallerNumber) == 0 {
-		l.SkipCallerNumber = 3
+		l.SkipCallerNumber = DefaultSkipCallerNumber
 	} else if skipCallerNumber[0] > 0 {
 		l.SkipCallerNumber = skipCallerNumber[0]
 	}
@@ -130,27 +148,34 @@ func (l *Logger) WriteString(level Level, message string) {
 	if DisableColor {
 		t = defaultFormatters[level].Type
 	}
-	var bytesBuf = bytes.NewBuffer(nil)
+	bytesBuf := bufPool.Get().(*bytes.Buffer)
+	defer func() {
+		bytesBuf.Reset()
+		bufPool.Put(bytesBuf)
+	}()
 	if len(l.DateFormat) > 0 {
-		bytesBuf.WriteString("[")
+		bytesBuf.Write(left)
 		bytesBuf.WriteString(time.Now().Format(l.DateFormat))
-		bytesBuf.WriteString("] ")
+		bytesBuf.Write(right)
+		bytesBuf.Write(space)
 	}
-	bytesBuf.WriteString(l.getCaller())
 	bytesBuf.WriteString(t)
-	bytesBuf.WriteString(" ")
+	bytesBuf.Write(space)
+	l.writeCallerInfo(bytesBuf)
 	bytesBuf.WriteString(message)
-	bytesBuf.WriteString("\n")
-
+	bytesBuf.Write(brk)
 	l.Writer.Write(bytesBuf.Bytes())
 }
 
-func (l *Logger) getCaller() string {
+func (l *Logger) writeCallerInfo(buf *bytes.Buffer) {
 	if l.RecordCaller {
 		_, callerFile, line, ok := runtime.Caller(l.SkipCallerNumber)
 		if ok {
-			return path.Base(callerFile) + ":" + strconv.Itoa(line) + ": "
+			buf.Write([]byte(path.Base(callerFile)))
+			buf.Write(risk)
+			buf.WriteString(strconv.Itoa(line))
+			buf.Write(risk)
+			buf.Write(space)
 		}
 	}
-	return ""
 }

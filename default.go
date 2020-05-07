@@ -2,60 +2,60 @@ package logger
 
 import "io"
 
-var defaultLogger AbstractLogger = New()
+var stdLogger AbstractLogger = New()
 
 func init()  {
-	defaultLogger.SetReportCaller(true, 4)
+	stdLogger.SetReportCaller(true, DefaultSkipCallerNumber + 1)
 }
 
 func SetDefault(logger AbstractLogger) {
-	defaultLogger = logger
+	stdLogger = logger
 }
 
 func SetLogLevel(level Level) {
-	defaultLogger.SetLogLevel(level)
+	stdLogger.SetLogLevel(level)
 }
 
 func SetOutput(writer io.Writer) {
-	defaultLogger.SetOutput(writer)
+	stdLogger.SetOutput(writer)
 }
 
 func SetDateFormat(format string) {
-	defaultLogger.SetDateFormat(format)
+	stdLogger.SetDateFormat(format)
 }
 
 func SetReportCaller(b bool) {
-	defaultLogger.SetReportCaller(b, 4)
+	stdLogger.SetReportCaller(b, DefaultSkipCallerNumber + 1)
 }
 
 func Debug(args ...interface{}) {
-	defaultLogger.Debug(args...)
+	stdLogger.Debug(args...)
 }
 
 func Debugf(format string, args ...interface{}) {
-	defaultLogger.Debugf(format, args...)
+	stdLogger.Debugf(format, args...)
 }
 
 func Print(args ...interface{}) {
-	defaultLogger.Print(args...)
+	stdLogger.Print(args...)
 }
 
 func Printf(format string, args ...interface{}) {
-	defaultLogger.Printf(format, args...)
+	stdLogger.Printf(format, args...)
 }
 
 func Warning(args ...interface{}) {
-	defaultLogger.Warning(args...)
+	stdLogger.Warning(args...)
 }
 
 func Warningf(format string, args ...interface{}) {
-	defaultLogger.Warningf(format, args...)
+	stdLogger.Warningf(format, args...)
 }
 
 func Error(args ...interface{}) {
-	defaultLogger.Error(args...)
+	stdLogger.Error(args...)
 }
 
 func Errorf(format string, args ...interface{}) {
-	defaultLogger.Errorf(format, args...)
+	stdLogger.Errorf(format, args...)
 }
