@@ -3,8 +3,8 @@ package logger
 import (
 	"bytes"
 	"fmt"
+	"github.com/fatih/color"
 	"io"
-	"os"
 	"path"
 	"runtime"
 	"strconv"
@@ -26,11 +26,11 @@ const DefaultDateFormat = "2006/01/02 15:04"
 const DefaultSkipCallerNumber = 3
 
 var (
-	risk  = []byte(":")
-	left  = []byte("[")
-	right = []byte("]")
-	space = []byte(" ")
-	brk = []byte("\n")
+	risk         = []byte(":")
+	left         = []byte("[")
+	right        = []byte("]")
+	space        = []byte(" ")
+	brk          = []byte("\n")
 	DisableColor = false
 
 	bufPool sync.Pool
@@ -71,7 +71,7 @@ func init() {
 
 func New() *Logger {
 	return &Logger{
-		Writer:           os.Stdout,
+		Writer:           color.Output,
 		Level:            DebugLevel,
 		DateFormat:       DefaultDateFormat,
 		SkipCallerNumber: DefaultSkipCallerNumber,
@@ -153,6 +153,7 @@ func (l *Logger) WriteString(level Level, message string) {
 		bytesBuf.Reset()
 		bufPool.Put(bytesBuf)
 	}()
+	bytesBuf.Grow(len(l.DateFormat) + len(t) + len(message) + 64)
 	if len(l.DateFormat) > 0 {
 		bytesBuf.Write(left)
 		bytesBuf.WriteString(time.Now().Format(l.DateFormat))
