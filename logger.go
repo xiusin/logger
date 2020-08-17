@@ -21,6 +21,8 @@ const (
 	ErrorLevel
 )
 
+var defaultWriter = color.Output 
+
 const DefaultDateFormat = "2006/01/02 15:04"
 
 const DefaultSkipCallerNumber = 3
@@ -67,6 +69,10 @@ func init() {
 	bufPool = sync.Pool{New: func() interface{} {
 		return bytes.NewBuffer(nil)
 	}}
+}
+
+func DefaultWriter() io.Writer {
+	return defaultWriter
 }
 
 func New() *Logger {
