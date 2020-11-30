@@ -21,7 +21,7 @@ const (
 	ErrorLevel
 )
 
-var defaultWriter = color.Output 
+var defaultWriter = color.Output
 
 const DefaultDateFormat = "2006/01/02 15:04"
 
@@ -77,7 +77,7 @@ func DefaultWriter() io.Writer {
 
 func New() *Logger {
 	return &Logger{
-		Writer:           color.Output,
+		Writer:           defaultWriter,
 		Level:            DebugLevel,
 		DateFormat:       DefaultDateFormat,
 		SkipCallerNumber: DefaultSkipCallerNumber,
@@ -96,6 +96,18 @@ func (l *Logger) SetDateFormat(format string) {
 	l.DateFormat = format
 }
 
+func (l *Logger) getArgs(args []interface{}) []interface{} {
+	argWithSpaces := make([]interface{}, len(args)*2)
+	idx := 0
+	for _, v := range args {
+		argWithSpaces[idx] = v
+		idx++
+		argWithSpaces[idx] = " "
+		idx++
+	}
+	return argWithSpaces
+}
+
 func (l *Logger) SetReportCaller(b bool, skipCallerNumber ...int) {
 	l.RecordCaller = b
 	if len(skipCallerNumber) == 0 {
@@ -107,7 +119,7 @@ func (l *Logger) SetReportCaller(b bool, skipCallerNumber ...int) {
 
 func (l *Logger) Debug(args ...interface{}) {
 	if l.Level <= DebugLevel {
-		l.WriteString(DebugLevel, fmt.Sprint(args...))
+		l.WriteString(DebugLevel, fmt.Sprint(l.getArgs(args)...))
 	}
 }
 
@@ -119,7 +131,7 @@ func (l *Logger) Debugf(format string, args ...interface{}) {
 
 func (l *Logger) Print(args ...interface{}) {
 	if l.Level <= InfoLevel {
-		l.WriteString(InfoLevel, fmt.Sprint(args...))
+		l.WriteString(InfoLevel, fmt.Sprint(l.getArgs(args)...))
 	}
 }
 
@@ -131,7 +143,7 @@ func (l *Logger) Printf(format string, args ...interface{}) {
 
 func (l *Logger) Warning(args ...interface{}) {
 	if l.Level <= WarnLevel {
-		l.WriteString(WarnLevel, fmt.Sprint(args...))
+		l.WriteString(WarnLevel, fmt.Sprint(l.getArgs(args)...))
 	}
 }
 
@@ -142,7 +154,7 @@ func (l *Logger) Warningf(format string, args ...interface{}) {
 }
 
 func (l *Logger) Error(args ...interface{}) {
-	l.WriteString(ErrorLevel, fmt.Sprint(args...))
+	l.WriteString(ErrorLevel, fmt.Sprint(l.getArgs(args)...))
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
