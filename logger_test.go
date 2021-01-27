@@ -5,7 +5,8 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	Error("This is an error message")
+	Error("This is an error message", "this is error message 2")
+	Errorf("This is an error message %s", "这是一个错误信息")
 	Warning("This is a warning message")
 	Print("This is an info message")
 	Debug("This is a debug message")

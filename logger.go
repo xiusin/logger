@@ -7,6 +7,7 @@ import (
 	"io"
 	"path"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -154,10 +155,13 @@ func (l *Logger) Warningf(format string, args ...interface{}) {
 }
 
 func (l *Logger) Error(args ...interface{}) {
+	args = append(args, "\n", string(debug.Stack()))
 	l.WriteString(ErrorLevel, fmt.Sprint(l.getArgs(args)...))
 }
 
 func (l *Logger) Errorf(format string, args ...interface{}) {
+	format += "\n %s"
+	args = append(args, string(debug.Stack()))
 	l.WriteString(ErrorLevel, fmt.Sprintf(format, args...))
 }
 
