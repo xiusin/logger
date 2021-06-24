@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/fatih/color"
+	"golang.org/x/term"
 	"io"
+	"os"
 	"path"
 	"runtime"
 	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
+	"unsafe"
 )
 
 type Level int8
@@ -29,12 +32,11 @@ const DefaultDateFormat = "2006/01/02 15:04"
 const DefaultSkipCallerNumber = 3
 
 var (
-	risk         = []byte(":")
-	left         = []byte("[")
-	right        = []byte("]")
-	space        = []byte(" ")
-	brk          = []byte("\n")
-	DisableColor = false
+	risk  = []byte(":")
+	left  = []byte("[")
+	right = []byte("]")
+	space = []byte(" ")
+	brk   = []byte("\n")
 
 	bufPool sync.Pool
 )
@@ -56,6 +58,8 @@ type AbstractLogger interface {
 
 	Error(args ...interface{})
 	Errorf(format string, args ...interface{})
+
+	Fatal(args ...interface{})
 }
 
 type Logger struct {
@@ -155,7 +159,8 @@ func (l *Logger) Warningf(format string, args ...interface{}) {
 }
 
 func (l *Logger) Error(args ...interface{}) {
-	args = append(args, "\n", string(debug.Stack()))
+	stack := debug.Stack()
+	args = append(args, "\n", *(*string)(unsafe.Pointer(&stack)))
 	l.WriteString(ErrorLevel, fmt.Sprint(l.getArgs(args)...))
 }
 
@@ -165,29 +170,34 @@ func (l *Logger) Errorf(format string, args ...interface{}) {
 	l.WriteString(ErrorLevel, fmt.Sprintf(format, args...))
 }
 
+func (l *Logger) Fatal(args ...interface{}) {
+	l.Error(args...)
+	panic(fmt.Sprint(args...))
+}
+
 func (l *Logger) WriteString(level Level, message string) {
-	t := defaultFormatters[level].ColorType
-	if DisableColor {
-		t = defaultFormatters[level].Type
-	}
 	bytesBuf := bufPool.Get().(*bytes.Buffer)
 	defer func() {
 		bytesBuf.Reset()
 		bufPool.Put(bytesBuf)
 	}()
-	bytesBuf.Grow(len(l.DateFormat) + len(t) + len(message) + 64)
+	bytesBuf.Grow(len(l.DateFormat) + len(message) + 64)
 	if len(l.DateFormat) > 0 {
 		bytesBuf.Write(left)
 		bytesBuf.WriteString(time.Now().Format(l.DateFormat))
 		bytesBuf.Write(right)
 		bytesBuf.Write(space)
 	}
-	bytesBuf.WriteString(t)
+	if !l.isTerminal() {
+		bytesBuf.WriteString(defaultFormatters[level].Type)
+	} else {
+		bytesBuf.WriteString(defaultFormatters[level].ColorType)
+	}
 	bytesBuf.Write(space)
 	l.writeCallerInfo(bytesBuf)
 	bytesBuf.WriteString(message)
 	bytesBuf.Write(brk)
-	l.Writer.Write(bytesBuf.Bytes())
+	_, _ = l.Writer.Write(bytesBuf.Bytes())
 }
 
 func (l *Logger) writeCallerInfo(buf *bytes.Buffer) {
@@ -200,5 +210,14 @@ func (l *Logger) writeCallerInfo(buf *bytes.Buffer) {
 			buf.Write(risk)
 			buf.Write(space)
 		}
+	}
+}
+
+func (l *Logger) isTerminal() bool {
+	switch v := l.Writer.(type) {
+	case *os.File:
+		return term.IsTerminal(int(v.Fd()))
+	default:
+		return false
 	}
 }
