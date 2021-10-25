@@ -2,9 +2,8 @@ package logger
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/fatih/color"
-	"golang.org/x/term"
 	"io"
 	"os"
 	"path"
@@ -14,6 +13,9 @@ import (
 	"sync"
 	"time"
 	"unsafe"
+
+	"github.com/fatih/color"
+	"golang.org/x/term"
 )
 
 type Level int8
@@ -60,6 +62,8 @@ type AbstractLogger interface {
 	Errorf(format string, args ...interface{})
 
 	Fatal(args ...interface{})
+
+	EntityLogger() AbstractLogger
 }
 
 type Logger struct {
@@ -68,16 +72,14 @@ type Logger struct {
 	DateFormat       string
 	RecordCaller     bool
 	SkipCallerNumber int
+
+	entityData map[string]interface{}
 }
 
 func init() {
 	bufPool = sync.Pool{New: func() interface{} {
 		return bytes.NewBuffer(nil)
 	}}
-}
-
-func DefaultWriter() io.Writer {
-	return defaultWriter
 }
 
 func New() *Logger {
@@ -181,7 +183,6 @@ func (l *Logger) WriteString(level Level, message string) {
 		bytesBuf.Reset()
 		bufPool.Put(bytesBuf)
 	}()
-	bytesBuf.Grow(len(l.DateFormat) + len(message) + 64)
 	if len(l.DateFormat) > 0 {
 		bytesBuf.Write(left)
 		bytesBuf.WriteString(time.Now().Format(l.DateFormat))
@@ -196,7 +197,13 @@ func (l *Logger) WriteString(level Level, message string) {
 	bytesBuf.Write(space)
 	l.writeCallerInfo(bytesBuf)
 	bytesBuf.WriteString(message)
+	if l.entityData != nil {
+		byts, _ := json.Marshal(&l.entityData)
+		bytesBuf.Write(space)
+		bytesBuf.Write(byts)
+	}
 	bytesBuf.Write(brk)
+
 	_, _ = l.Writer.Write(bytesBuf.Bytes())
 }
 
@@ -220,4 +227,8 @@ func (l *Logger) isTerminal() bool {
 	default:
 		return false
 	}
+}
+
+func (l *Logger) EntityLogger() AbstractLogger {
+	return &LogEntity{Logger: l}
 }

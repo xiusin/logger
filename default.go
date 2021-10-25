@@ -4,8 +4,12 @@ import "io"
 
 var stdLogger AbstractLogger = New()
 
-func init()  {
-	stdLogger.SetReportCaller(true, DefaultSkipCallerNumber + 1)
+func init() {
+	stdLogger.SetReportCaller(true, DefaultSkipCallerNumber+1)
+}
+
+func GetDefault() AbstractLogger {
+	return stdLogger
 }
 
 func SetDefault(logger AbstractLogger) {
@@ -25,7 +29,7 @@ func SetDateFormat(format string) {
 }
 
 func SetReportCaller(b bool) {
-	stdLogger.SetReportCaller(b, DefaultSkipCallerNumber + 1)
+	stdLogger.SetReportCaller(b, DefaultSkipCallerNumber+1)
 }
 
 func Debug(args ...interface{}) {
@@ -58,4 +62,8 @@ func Error(args ...interface{}) {
 
 func Errorf(format string, args ...interface{}) {
 	stdLogger.Errorf(format, args...)
+}
+
+func EntityLogger() AbstractLogger {
+	return &LogEntity{Logger: stdLogger.(*Logger)}
 }

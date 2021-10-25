@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"io/ioutil"
 	"testing"
 )
 
@@ -10,17 +11,21 @@ func TestLogger(t *testing.T) {
 	Warning("This is a warning message")
 	Print("This is an info message")
 	Debug("This is a debug message")
+	entity := EntityLogger()
+	entity.(*LogEntity).SetDataKV("name", "xiusin")
+	entity.(*LogEntity).SetDataKV("age", 1)
+	entity.(*LogEntity).SetDataKV("address", []string{"HeNan", "ZhengZhou", "JinShuiQu"})
+	entity.Print("print")
 }
 
 func BenchmarkLogger(b *testing.B) {
+	SetLogLevel(DebugLevel)
+	f, _ := ioutil.TempFile("/Users/xiusin/projects/src/github.com/xiusin/logger/", "*.log")
+	SetOutput(f)
+	defer f.Close()
 	b.ReportAllocs()
 	b.StartTimer()
-	SetLogLevel(DebugLevel)
 	for i := 0; i < b.N; i++ {
-		Errorf("[%d] This is an error message", i)
-		Warningf("[%d] This is a warning message", i)
-		Printf("[%d] This is an info message", i)
-		Debugf("[%d] This is a debug message", i)
+		Debug("[%d] This is a debug message")
 	}
 }
-
