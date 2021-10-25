@@ -32,6 +32,13 @@ func (entity *LogEntity) SetData(data map[string]interface{}) *LogEntity {
 	return entity
 }
 
+func (entity *LogEntity) ClearData() {
+	entity.Lock()
+	defer entity.Unlock()
+
+	entity.entityData = map[string]interface{}{}
+}
+
 func (entity *LogEntity) getDatas() map[string]interface{} {
 	return entity.entityData
 }
