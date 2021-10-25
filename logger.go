@@ -230,5 +230,7 @@ func (l *Logger) isTerminal() bool {
 }
 
 func (l *Logger) EntityLogger() AbstractLogger {
-	return &LogEntity{Logger: l}
+	entity := &LogEntity{Logger: l}
+	entity.LoggerIdField = "TraceLoggerId"
+	return entity
 }
