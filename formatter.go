@@ -3,8 +3,8 @@ package logger
 import "github.com/fatih/color"
 
 type levelFormatter struct {
-	ColorType    string
-	Type         string
+	ColorType string
+	Type      string
 }
 
 var defaultFormatters = map[Level]*levelFormatter{

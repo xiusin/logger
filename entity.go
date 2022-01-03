@@ -12,6 +12,11 @@ type LogEntity struct {
 
 func (entity *LogEntity) Id(id string) {
 	if len(id) > 0 {
+		entity.Lock()
+		if entity.entityData == nil {
+			entity.entityData = map[string]interface{}{}
+		}
+		entity.Unlock()
 		entity.id = id
 		entity.SetDataKV(entity.LoggerIdField, id)
 	}
@@ -21,9 +26,6 @@ func (entity *LogEntity) SetDataKV(key string, val interface{}) *LogEntity {
 	entity.Lock()
 	defer entity.Unlock()
 
-	if entity.entityData == nil {
-		entity.entityData = map[string]interface{}{}
-	}
 	entity.entityData[key] = val
 	return entity
 }
@@ -31,9 +33,6 @@ func (entity *LogEntity) SetDataKV(key string, val interface{}) *LogEntity {
 func (entity *LogEntity) SetData(data map[string]interface{}) *LogEntity {
 	entity.Lock()
 	defer entity.Unlock()
-	if entity.entityData == nil {
-		entity.entityData = map[string]interface{}{}
-	}
 
 	for k, v := range data {
 		entity.entityData[k] = v
