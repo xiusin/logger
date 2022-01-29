@@ -11,20 +11,22 @@ type LogEntity struct {
 }
 
 func (entity *LogEntity) Id(id string) {
-	if len(id) > 0 {
-		entity.Lock()
+	entity.Lock()
+	if len(entity.id) > 0 {
 		if entity.entityData == nil {
 			entity.entityData = map[string]interface{}{}
 		}
-		entity.Unlock()
 		entity.id = id
-		entity.SetDataKV(entity.LoggerIdField, id)
+		entity.SetDataKV(entity.LoggerIdField, id, true)
 	}
+	entity.Unlock()
 }
 
-func (entity *LogEntity) SetDataKV(key string, val interface{}) *LogEntity {
-	entity.Lock()
-	defer entity.Unlock()
+func (entity *LogEntity) SetDataKV(key string, val interface{}, noLocker ...bool) *LogEntity {
+	if len(noLocker) == 0 || !noLocker[0] {
+		entity.Lock()
+		defer entity.Unlock()
+	}
 
 	entity.entityData[key] = val
 	return entity
